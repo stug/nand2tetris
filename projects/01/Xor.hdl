@@ -12,5 +12,18 @@ CHIP Xor {
     OUT out;
 
     PARTS:
-    // Put your code here:
+    Or(a=a, b=b, out=aOrB);  // 3 Nand
+    Nand(a=a, b=b, out=aNandB); // 1 Nand (duh)
+    And(a=aOrB, b=aNandB, out=out);  // 2 Nand
+    // = 6 total
+
+    /* 
+    Alternative implementation (takes more nands than the 6 above):
+    Not(in=a, out=notA);  // 1 Nand
+    Not(in=b, out=notB);  // 1 Nand
+    And(a=a, b=notB, out=aAndNotB);  // 2 Nand
+    And(a=b, b=notA, out=bAndNotA);  // 2 Nand
+    Or(a=aAndNotB, b=bAndNotA, out=out);  // 3 Nand
+    // = 9 total
+    */
 }
