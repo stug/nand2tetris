@@ -12,5 +12,16 @@ CHIP Mux {
     OUT out;
 
     PARTS:
-    // Put your code here:
+    Not(in=sel, out=notSel);
+    Nand(a=a, b=notSel, out=outa);
+    Nand(a=b, b=sel, out=outb);
+    Nand(a=outa, b=outb, out=out);
+
+    /*
+    Note that this is really (a && !sel) || (b && sel), but because
+    Or(a, b) = Nand(Not(a), Not(b))
+    and
+    And(a, b) = Not(Nand(a, b))
+    The Not's cancel, leaving the above.
+    */
 }
