@@ -45,5 +45,33 @@ CHIP ALU {
         ng; // 1 if (out<0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+    // maybe zero and negate X
+    Mux16(a=x, b[0..15]=false, sel=zx, out=zeroedX);
+    Not16(in=zeroedX, out=zeroedNegatedX);
+    Mux16(a=zeroedX, b=zeroedNegatedX, sel=nx, out=preparedX);
+
+    // maybe zero and negate Y
+    Mux16(a=y, b[0..15]=false, sel=zy, out=zeroedY);
+    Not16(in=zeroedY, out=zeroedNegatedY);
+    Mux16(a=zeroedY, b=zeroedNegatedY, sel=ny, out=preparedY);
+
+    // Add and And x and y and choose which to use for the output
+    Add16(a=preparedX, b=preparedY, out=xPlusY);
+    And16(a=preparedX, b=preparedY, out=xAndY);
+    Mux16(a=xAndY, b=xPlusY, sel=f, out=notNegatedOutput);
+
+    // Maybe negate the output (outputting to a bunch of different places for
+    // various purposes, the most important being the overall output of the ALU.
+    Not16(in=notNegatedOutput, out=negatedOutput);
+    Mux16(a=notNegatedOutput, b=negatedOutput, sel=no, out=out, out[15]=outputMSB,
+        out[0..7]=firstHalfOutput, out[8..15]=secondHalfOutput);
+
+    // output is negative if MSB is 1
+    And(a=true, b=outputMSB, out=ng);
+
+    // output is 0 if none of its bits are 1 (is this the best way to do this..?)
+    Or8Way(in=firstHalfOutput, out=anyFirstHalf);
+    Or8Way(in=secondHalfOutput, out=anySecondHalf);
+    Or(a=anyFirstHalf, b=anySecondHalf, out=any);
+    Not(in=any, out=zr);
 }
