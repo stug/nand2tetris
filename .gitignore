@@ -1,3 +1,5 @@
 *.out
 *.dat
 *.hack
+*.DS_Store
+*.pyc
