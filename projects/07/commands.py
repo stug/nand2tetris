@@ -62,7 +62,7 @@ class PushPopCommand(Command):
         self.index = args[1]
 
 
-# could do this with a metaclass but, blech
+# could do this with a metaclass, but blech to that
 COMMAND_TO_TYPE = {}
 for command_type in [
     TwoOperandArithmeticCommand,

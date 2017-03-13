@@ -39,9 +39,9 @@ class CodeWriter(object):
             'M=D',
             '@STARTPROGRAM',
             'D;JMP',
-
-            # set replace top of stack with true and jump back
-            # to instruction stored in R13
+            '',
+            # replace top of stack with true and jump back to instruction
+            # stored in R13
             '(SETTRUE)',
             '@SP',
             'A=M-1',  # decrement because the top of the stack is 1 before @SP

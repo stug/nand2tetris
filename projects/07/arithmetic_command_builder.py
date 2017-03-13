@@ -73,6 +73,8 @@ class ArithmeticCommandBuilder(object):
     def build_comparison(self, command):
         end_label = self.build_end_label_name(command.command_name)
         asm_commands = [
+            # store end label in R13 so that we can get back here if we jump
+            # to SETTRUE
             '@{}'.format(end_label),
             'D=A',
             '@R13',

@@ -37,6 +37,7 @@ class VMTranslator(object):
     def translate(self):
         with self.codewriter.open():
             for vm_file_path in self.vm_file_paths:
+                self.codewriter.set_vm_filename(vm_file_path)
                 for command in Parser(vm_file_path).parse():
                     self.codewriter.translate_and_write_vm_command(command)
 
