@@ -46,7 +46,7 @@ class PushPopCommand(Command):
     EXPECTED_ARG_LENGTH = 2
     HANDLED_COMMANDS = ['push', 'pop']
     MEMORY_SEGMENTS = set([
-        'argument', 'local', 'static', 'constant', 'this', 'this', 'pointer',
+        'argument', 'local', 'static', 'constant', 'this', 'that', 'pointer',
         'temp'
     ])
 
@@ -58,6 +58,9 @@ class PushPopCommand(Command):
         self.memory_segment = args[0]
         if self.memory_segment not in self.MEMORY_SEGMENTS:
             raise CommandParseException('Invalid memory segment')
+
+        if self.command_name == 'pop' and self.memory_segment == 'constant':
+            raise CommandParseException("Can't pop to constant!")
 
         self.index = args[1]
 

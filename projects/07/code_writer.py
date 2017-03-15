@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 
 from arithmetic_command_builder import ArithmeticCommandBuilder
+from push_pop_command_builder import PushPopCommandBuilder
 from commands import ComparisonCommand
 from commands import OneOperandArithmeticCommand
 from commands import PushPopCommand
@@ -8,18 +9,21 @@ from commands import TwoOperandArithmeticCommand
 
 
 class CodeWriter(object):
+    """Reserved registers:
+    - R13 register is used to return to previous execution context after a jump
+    """
 
     def __init__(self, output_filename):
         self.output_filename = output_filename
         self.output_file = None
-        self.current_vm_filename = None
         self.arithmetic_command_builder = ArithmeticCommandBuilder()
+        self.push_pop_command_builder = PushPopCommandBuilder()
 
         self.vm_command_type_to_method = {
             ComparisonCommand: self.arithmetic_command_builder.build_comparison,
             OneOperandArithmeticCommand: self.arithmetic_command_builder.build_one_operand_arithmetic,
             TwoOperandArithmeticCommand: self.arithmetic_command_builder.build_two_operand_arithmetic,
-            PushPopCommand: self.build_push_pop
+            PushPopCommand: self.push_pop_command_builder.build_push_pop
         }
 
     @contextmanager
@@ -55,7 +59,7 @@ class CodeWriter(object):
         self.write_asm_commands(asm_commands)
 
     def set_vm_filename(self, vm_filename):
-        self.current_vm_filename = vm_filename
+        self.push_pop_command_builder.set_current_vm_filename(vm_filename)
 
     def write_asm_commands(self, asm_commands):
         self.output_file.write('\n'.join(asm_commands))
@@ -66,22 +70,3 @@ class CodeWriter(object):
         asm += self.vm_command_type_to_method[type(command)](command)
         self.write_asm_commands(asm)
 
-    def build_push_pop(self, command):
-        if command.command_name == 'push':
-            # TODO: this assumes that we have a constant
-            if command.memory_segment == 'constant':
-                asm_commands = [
-                    # store value in D register
-                    '@{}'.format(command.index),
-                    'D=A',
-
-                    # Store D in top of stack
-                    '@SP',
-                    'A=M',
-                    'M=D',
-
-                    # increment stack pointer
-                    '@SP',
-                    'M=M+1'
-                ]
-                return asm_commands
