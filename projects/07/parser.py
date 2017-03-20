@@ -8,7 +8,7 @@ class Parser(object):
     def __init__(self, vm_file_path):
         self.vm_file_path = vm_file_path
 
-    def parse(self):
+    def yield_parsed_commands(self):
         with open(self.vm_file_path, 'r') as vm_file:
             for line in vm_file:
                 command = self.parse_line(line)
