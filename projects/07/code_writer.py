@@ -1,9 +1,13 @@
 from contextlib import contextmanager
 
 from arithmetic_command_builder import ArithmeticCommandBuilder
+from program_control_command_builder import ProgramControlCommandBuilder
 from push_pop_command_builder import PushPopCommandBuilder
 from commands import ComparisonCommand
+from commands import FunctionCallingCommand
+from commands import FunctionReturnCommand
 from commands import OneOperandArithmeticCommand
+from commands import ProgramFlowCommand
 from commands import PushPopCommand
 from commands import TwoOperandArithmeticCommand
 
@@ -18,12 +22,14 @@ class CodeWriter(object):
         self.output_file = None
         self.arithmetic_command_builder = ArithmeticCommandBuilder()
         self.push_pop_command_builder = PushPopCommandBuilder()
+        self.program_control_command_builder = ProgramControlCommandBuilder()
 
         self.vm_command_type_to_method = {
             ComparisonCommand: self.arithmetic_command_builder.build_comparison,
             OneOperandArithmeticCommand: self.arithmetic_command_builder.build_one_operand_arithmetic,
             TwoOperandArithmeticCommand: self.arithmetic_command_builder.build_two_operand_arithmetic,
-            PushPopCommand: self.push_pop_command_builder.build_push_pop
+            PushPopCommand: self.push_pop_command_builder.build_push_pop,
+            ProgramFlowCommand: self.program_control_command_builder.build_program_flow_command,
         }
 
     @contextmanager

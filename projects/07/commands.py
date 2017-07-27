@@ -26,6 +26,8 @@ class Command(object):
         )
 
 
+# TODO: should subclasses of Command live in their respective command builder
+# modules?
 class TwoOperandArithmeticCommand(Command):
 
     HANDLED_COMMANDS = ['add', 'sub', 'and', 'or']
@@ -65,13 +67,39 @@ class PushPopCommand(Command):
         self.index = args[1]
 
 
+class ProgramFlowCommand(Command):
+
+    EXPECTED_ARG_LENGTH = 1
+    HANDLED_COMMANDS = ['label', 'goto', 'if-goto']
+
+    label = None
+
+    def process_args(self, args):
+        super(ProgramFlowCommand, self).process_args(args)
+        self.label = args[0]
+
+
+class FunctionCallingCommand(Command):
+
+    EXPECTED_ARG_LENGTH = 2
+    HANDLED_COMMANDS = ['function', 'call']
+
+
+class FunctionReturnCommand(Command):
+
+    HANDLED_COMMANDS = ['return']
+
+
 # could do this with a metaclass, but blech to that
 COMMAND_TO_TYPE = {}
 for command_type in [
     TwoOperandArithmeticCommand,
     ComparisonCommand,
     OneOperandArithmeticCommand,
-    PushPopCommand
+    PushPopCommand,
+    ProgramFlowCommand,
+    FunctionCallingCommand,
+    FunctionReturnCommand,
 ]:
     COMMAND_TO_TYPE.update({
         handled_command: command_type
