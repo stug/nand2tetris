@@ -79,13 +79,35 @@ class ProgramFlowCommand(Command):
         self.label = args[0]
 
 
-class FunctionCallingCommand(Command):
+class FunctionCommand(Command):
 
     EXPECTED_ARG_LENGTH = 2
-    HANDLED_COMMANDS = ['function', 'call']
+    HANDLED_COMMANDS = ['function']
+
+    function_name = None
+    num_local_variables = None
+
+    def process_args(self, args):
+        super(FunctionCommand, self).process_args(args)
+        self.function_name = args[0]
+        self.num_local_variables = int(args[1])
 
 
-class FunctionReturnCommand(Command):
+class CallCommand(Command):
+
+    EXPECTED_ARG_LENGTH = 2
+    HANDLED_COMMANDS = ['call']
+
+    function_name = None
+    num_args = None
+
+    def process_args(self, args):
+        super(CallCommand, self).process_args(args)
+        self.function_name = self.args[0]
+        self.num_args = self.args[1]
+
+
+class ReturnCommand(Command):
 
     HANDLED_COMMANDS = ['return']
 
@@ -98,8 +120,9 @@ for command_type in [
     OneOperandArithmeticCommand,
     PushPopCommand,
     ProgramFlowCommand,
-    FunctionCallingCommand,
-    FunctionReturnCommand,
+    FunctionCommand,
+    CallCommand,
+    ReturnCommand,
 ]:
     COMMAND_TO_TYPE.update({
         handled_command: command_type
