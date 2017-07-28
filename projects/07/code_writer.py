@@ -24,6 +24,7 @@ class CodeWriter(object):
             self.push_pop_command_builder
         )
 
+        # TODO: this is a little messy, maybe a metaclass is worth it after all?
         self.vm_command_type_to_method = {
             CallCommand: self.program_control_command_builder.build_call_command,
             ComparisonCommand: self.arithmetic_command_builder.build_comparison,
@@ -42,19 +43,25 @@ class CodeWriter(object):
             yield self
 
     def write_initialization(self):
-        # TODO: should each setup piece have its own method?
-        asm_commands = [
-            # initialize stack pointer to 256 and then jump to after definition
-            # of SETTRUE
+        self._write_initialize_stack_pointer()
+        self.write_asm_commands(
+            self.program_control_command_builder.build_call_sys_init()
+        )
+        self._write_create_set_true_label()
+
+    def _write_initialize_stack_pointer(self):
+        self.write_asm_commands([
+            '// Initialize stack pointer',
             '@256',
             'D=A',
             '@SP',
             'M=D',
-            '@STARTPROGRAM',
-            'D;JMP',
-            '',
-            # replace top of stack with true and jump back to instruction
-            # stored in R13
+        ])
+
+    def _write_create_set_true_label(self):
+        self.write_asm_commands([
+            '// SETTRUE label sets top of stack to True and jumps back to ',
+            '// instruction address stored in R13',
             '(SETTRUE)',
             '@SP',
             'A=M-1',  # decrement because the top of the stack is 1 before @SP
@@ -62,10 +69,7 @@ class CodeWriter(object):
             '@R13',
             'A=M',
             'D;JMP',
-            '',
-            '(STARTPROGRAM)'
-        ]
-        self.write_asm_commands(asm_commands)
+        ])
 
     def set_vm_filename(self, vm_filename):
         # TODO: might be nice to have some sort of proxy object instead of this
@@ -78,8 +82,12 @@ class CodeWriter(object):
         self.output_file.write('\n'.join(asm_commands))
         self.output_file.write('\n\n')
 
-    def translate_and_write_vm_command(self, command):
+    def translate_vm_command(self, command):
         asm = ['//{}'.format(str(command))]
         asm += self.vm_command_type_to_method[type(command)](command)
+        return asm
+
+    def translate_and_write_vm_command(self, command):
+        asm = self.translate_vm_command(command)
         self.write_asm_commands(asm)
 

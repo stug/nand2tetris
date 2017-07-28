@@ -115,3 +115,13 @@ class PushPopCommandBuilder(object):
                 index=command.index
             )
         ]
+
+    def build_command_to_push_arbitrary_value(self, arbitrary_value):
+        """Used during function calling to push non-vm-user-exposed arbitrary
+        data onto the stack (so we can recover our previous state after
+        function return)"""
+        asm_to_put_value_in_D_register = [
+            '@{}'.format(arbitrary_value),
+            'D=M',
+        ]
+        return asm_to_put_value_in_D_register + self.PUSH_COMMAND_BASE

@@ -103,8 +103,8 @@ class CallCommand(Command):
 
     def process_args(self, args):
         super(CallCommand, self).process_args(args)
-        self.function_name = self.args[0]
-        self.num_args = self.args[1]
+        self.function_name = args[0]
+        self.num_args = int(args[1])
 
 
 class ReturnCommand(Command):

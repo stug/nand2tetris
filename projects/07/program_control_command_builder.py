@@ -1,3 +1,4 @@
+from commands import ProgramFlowCommand
 from commands import PushPopCommand
 
 
@@ -15,10 +16,22 @@ class ProgramControlCommandBuilder(object):
         # from it.
         self.function_context = []
 
+        # arbitrary number used to unsure the uniqueness of labels used for
+        # function return addresses
+        self.arbitrary_number = 0
+
     def get_label_in_current_function_context(self, label):
         return '{function}${label}'.format(
             function=self.function_context[-1] if self.function_context else '',
             label=label,
+        )
+
+    def get_return_address_label(self):
+        call_number = self.arbitrary_number
+        self.arbitrary_number += 1
+        return '{function}$$call$${number}'.format(
+            function=self.function_context[-1] if self.function_context else '',
+            number=call_number
         )
 
     def set_current_vm_filename(self, vm_filename):
@@ -59,25 +72,66 @@ class ProgramControlCommandBuilder(object):
         ]
 
     def build_function_command(self, command):
-        function_name = self._get_qualified_function_name(command.function_name)
-        function_label_command = ['({})'.format(function_name)]
+        function_label_command = ['({})'.format(command.function_name)]
         push_0_command = self.push_pop_command_builder.build_push_pop(
             PushPopCommand('push', 'constant', '0')
         )
         # TODO: do this with a loop in the asm?
         initialization = push_0_command * command.num_local_variables
 
-        self.function_context.append(function_name)
+        self.function_context.append(command.function_name)
         return function_label_command + initialization
 
-    def _get_qualified_function_name(self, function_name):
-        return '{vm_filename}.{function_name}'.format(
-            vm_filename=self.current_vm_filename,
-            function_name=function_name,
-        )
+    def build_call_sys_init(self):
+        self.function_context.append('Sys.init')
+        return [
+            '// Begin execution by calling Sys.init',
+            '@Sys.init',
+            'D;JMP',
+        ]
 
     def build_call_command(self, command):
-        pass
+        return_address_label = self.get_return_address_label()
+        asm_commands = []
+
+        # push our previous state onto the stack
+        segments_to_save_on_stack = (return_address_label, 'LCL', 'ARG', 'THIS', 'THAT')
+        for segment in segments_to_save_on_stack:
+            asm_commands += ['// Save {} to stack'.format(segment)]  # TODO: remove
+            asm_commands += self.push_pop_command_builder.build_command_to_push_arbitrary_value(
+                segment
+            )
+            asm_commands += ['']  # TODO: remove
+
+        asm_commands += [
+            # set ARG to be (# of saved segments on stack + # args) behind SP
+            '// set ARG pointer',  # TODO: remove
+            '@SP',
+            'D=M',
+            '@{}'.format(len(segments_to_save_on_stack) + command.num_args),
+            'D=D-A',
+            '@ARG',
+            'M=D',
+            '',  # TODO: remove
+
+            # set LCL = SP (the function def handles pushing the locals onto the
+            # stack, which will push LCL ahead of SP)
+            '// set LCL=SP',  # TODO: remove
+            '@SP',
+            'D=M',
+            '@LCL',
+            'M=D',
+            '',  # TODO: remove
+
+            # now that the stack is set up, jump to the function
+            '// jump to function label',  # TODO: remove
+            '@{}'.format(command.function_name),
+            'D;JMP',
+        ]
+
+        # store the return address so we can come back
+        asm_commands +=['({})'.format(return_address_label)]
+        return asm_commands
 
     def build_return_command(self, command):
         asm_commands = [
