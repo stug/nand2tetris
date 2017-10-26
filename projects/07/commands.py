@@ -26,6 +26,8 @@ class Command(object):
         )
 
 
+# TODO: should subclasses of Command live in their respective command builder
+# modules?
 class TwoOperandArithmeticCommand(Command):
 
     HANDLED_COMMANDS = ['add', 'sub', 'and', 'or']
@@ -65,13 +67,62 @@ class PushPopCommand(Command):
         self.index = args[1]
 
 
+class ProgramFlowCommand(Command):
+
+    EXPECTED_ARG_LENGTH = 1
+    HANDLED_COMMANDS = ['label', 'goto', 'if-goto']
+
+    label = None
+
+    def process_args(self, args):
+        super(ProgramFlowCommand, self).process_args(args)
+        self.label = args[0]
+
+
+class FunctionCommand(Command):
+
+    EXPECTED_ARG_LENGTH = 2
+    HANDLED_COMMANDS = ['function']
+
+    function_name = None
+    num_local_variables = None
+
+    def process_args(self, args):
+        super(FunctionCommand, self).process_args(args)
+        self.function_name = args[0]
+        self.num_local_variables = int(args[1])
+
+
+class CallCommand(Command):
+
+    EXPECTED_ARG_LENGTH = 2
+    HANDLED_COMMANDS = ['call']
+
+    function_name = None
+    num_args = None
+
+    def process_args(self, args):
+        super(CallCommand, self).process_args(args)
+        self.function_name = args[0]
+        self.num_args = int(args[1])
+
+
+class ReturnCommand(Command):
+
+    HANDLED_COMMANDS = ['return']
+
+
 # could do this with a metaclass, but blech to that
 COMMAND_TO_TYPE = {}
 for command_type in [
     TwoOperandArithmeticCommand,
     ComparisonCommand,
     OneOperandArithmeticCommand,
-    PushPopCommand
+    PushPopCommand,
+    ProgramFlowCommand,
+    FunctionCommand,
+    CallCommand,
+    ReturnCommand,
 ]:
     COMMAND_TO_TYPE.update({
         handled_command: command_type
