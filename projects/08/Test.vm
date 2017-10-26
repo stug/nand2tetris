@@ -1,0 +1,14 @@
+// Test program to simplify debugging
+
+function Sys.init 0
+push constant 909
+call dothing 1
+label endprogram
+goto endprogram
+
+
+function dothing 0
+push constant 1
+push argument 0
+add
+return

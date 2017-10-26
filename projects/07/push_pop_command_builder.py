@@ -116,12 +116,22 @@ class PushPopCommandBuilder(object):
             )
         ]
 
-    def build_command_to_push_arbitrary_value(self, arbitrary_value):
-        """Used during function calling to push non-vm-user-exposed arbitrary
-        data onto the stack (so we can recover our previous state after
-        function return)"""
+    # TODO: is there some way to combine these two methods (which exist for use
+    # in function calling) with the above methods?
+    def build_commands_to_push_arbitrary_value(self, arbitrary_value_pointer):
         asm_to_put_value_in_D_register = [
-            '@{}'.format(arbitrary_value),
-            'D=M',
+            '@{}'.format(arbitrary_value_pointer),
+            'D=A',
         ]
         return asm_to_put_value_in_D_register + self.PUSH_COMMAND_BASE
+
+    def build_commands_to_push_pointer(self, pointer):
+        """Used during function calling to push non-vm-user-exposed pointers
+        onto the stack (so we can recover our previous state after function
+        return).
+        """
+        asm_to_put_pointer_in_D_register = [
+            '@{}'.format(pointer),
+            'D=M',
+        ]
+        return asm_to_put_pointer_in_D_register + self.PUSH_COMMAND_BASE

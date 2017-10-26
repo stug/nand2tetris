@@ -10,11 +10,10 @@ class ProgramControlCommandBuilder(object):
 
         self.current_vm_filename = None
 
-        # stack of what function we're currently in, used to ensure that labels
+        # current function definition we're in, used to ensure that labels
         # can be reused across functions without duplication in the resulting
-        # assembly. Entering a function pushes onto the stack, exiting pops
-        # from it.
-        self.function_context = []
+        # assembly.
+        self.current_function = None
 
         # arbitrary number used to unsure the uniqueness of labels used for
         # function return addresses
@@ -22,7 +21,7 @@ class ProgramControlCommandBuilder(object):
 
     def get_label_in_current_function_context(self, label):
         return '{function}${label}'.format(
-            function=self.function_context[-1] if self.function_context else '',
+            function=self.current_function or '',
             label=label,
         )
 
@@ -30,7 +29,7 @@ class ProgramControlCommandBuilder(object):
         call_number = self.arbitrary_number
         self.arbitrary_number += 1
         return '{function}$$call$${number}'.format(
-            function=self.function_context[-1] if self.function_context else '',
+            function=self.current_function or '',
             number=call_number
         )
 
@@ -79,52 +78,50 @@ class ProgramControlCommandBuilder(object):
         # TODO: do this with a loop in the asm?
         initialization = push_0_command * command.num_local_variables
 
-        self.function_context.append(command.function_name)
-        return function_label_command + initialization
+        self.current_function = command.function_name
 
-    def build_call_sys_init(self):
-        self.function_context.append('Sys.init')
-        return [
-            '// Begin execution by calling Sys.init',
-            '@Sys.init',
-            'D;JMP',
-        ]
+        return function_label_command + initialization
 
     def build_call_command(self, command):
         return_address_label = self.get_return_address_label()
-        asm_commands = []
 
-        # push our previous state onto the stack
-        segments_to_save_on_stack = (return_address_label, 'LCL', 'ARG', 'THIS', 'THAT')
-        for segment in segments_to_save_on_stack:
-            asm_commands += ['// Save {} to stack'.format(segment)]  # TODO: remove
-            asm_commands += self.push_pop_command_builder.build_command_to_push_arbitrary_value(
+        asm_commands = ['// Save return address to stack']
+        asm_commands += self.push_pop_command_builder.build_commands_to_push_arbitrary_value(
+            return_address_label
+        )
+        asm_commands += ['']
+
+        for segment in ('LCL', 'ARG', 'THIS', 'THAT'):
+            asm_commands += ['// Save {} to stack'.format(segment)]
+            asm_commands += self.push_pop_command_builder.build_commands_to_push_pointer(
                 segment
             )
-            asm_commands += ['']  # TODO: remove
+            asm_commands += ['']
 
         asm_commands += [
             # set ARG to be (# of saved segments on stack + # args) behind SP
-            '// set ARG pointer',  # TODO: remove
+            '// set ARG pointer',
             '@SP',
             'D=M',
-            '@{}'.format(len(segments_to_save_on_stack) + command.num_args),
+
+            # 5 is the number of saved slots on the stack between SP and the 
+            # caller's pushed arguments (return address, LCL, ARG, THIS, THAT)
+            '@{}'.format(5 + command.num_args),
             'D=D-A',
             '@ARG',
             'M=D',
-            '',  # TODO: remove
+            '',
 
-            # set LCL = SP (the function def handles pushing the locals onto the
-            # stack, which will push LCL ahead of SP)
-            '// set LCL=SP',  # TODO: remove
+            # the function def handles pushing the locals onto the stack, which
+            # will push LCL ahead of SP
+            '// set LCL=SP',
             '@SP',
             'D=M',
             '@LCL',
             'M=D',
-            '',  # TODO: remove
+            '',
 
-            # now that the stack is set up, jump to the function
-            '// jump to function label',  # TODO: remove
+            '// jump to function label',
             '@{}'.format(command.function_name),
             'D;JMP',
         ]
@@ -135,8 +132,8 @@ class ProgramControlCommandBuilder(object):
 
     def build_return_command(self, command):
         asm_commands = [
-            # LCL starts 5 addresses ahead of the return address, so determine
-            # the return address and store it in R13
+            # LCL starts 5 addresses ahead of the return address
+            '// store return address in R13',
             '@5',
             'D=A',
             '@LCL',
@@ -144,38 +141,41 @@ class ProgramControlCommandBuilder(object):
             'D=M',
             '@R13',
             'M=D',
+            '',
 
-            # What is currently ARG will be the top of the stack after we
-            # return, so put the pushed return value there
+            '// put return value where ARG currently points (will be top of stack)',
             '@SP',
             'A=M-1',
             'D=M',
             '@ARG',
             'A=M',
             'M=D',
+            '',
 
-            # And move the stack pointer to 1 after the return value we just
-            # placed
+            '// move SP to one after return value we just placed',
             'D=A+1',
             '@SP',
             'M=D',
+            '',
         ]
 
         # order matters since these are all defined relative to the current
         # state of LCL -- so we have to change LCL last
         for register_name in ('THAT', 'THIS', 'ARG', 'LCL'):
+            asm_commands += ['// restore {}'.format(register_name)]
             asm_commands += self._build_command_to_restore_saved_state(
                 register_name
             )
+            asm_commands += ['']
 
         asm_commands += [
-            # jump to the stored return address
+            '// jump to stored return address',
             '@R13',
             'A=M',
             '0;JMP',
+            '',
         ]
 
-        self.function_context.pop()
         return asm_commands
 
     # maps registers that are saved on stack during a function call (for the

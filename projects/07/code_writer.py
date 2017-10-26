@@ -44,9 +44,11 @@ class CodeWriter(object):
 
     def write_initialization(self):
         self._write_initialize_stack_pointer()
-        self.write_asm_commands(
-            self.program_control_command_builder.build_call_sys_init()
+        self.translate_and_write_vm_command(
+            CallCommand('call', 'Sys.init', '0')
         )
+        # Note that this has to go last so that calling Sys.init causes us
+        # to jump over the SETTRUE label instead of executing it
         self._write_create_set_true_label()
 
     def _write_initialize_stack_pointer(self):
