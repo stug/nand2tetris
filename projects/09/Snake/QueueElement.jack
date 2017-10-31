@@ -1,0 +1,30 @@
+class QueueElement {
+
+    field QueueElement next;
+    field Square data;
+
+    constructor QueueElement new(Square newdata, QueueElement newnext) {
+        let next = newnext;
+        let data = newdata;
+        return this;
+    }
+
+    method QueueElement getNext() {
+        return next;
+    }
+
+    method void setNext(QueueElement newNext) {
+        let next = newNext;
+        return;
+    }
+
+    method Square getData() {
+        return data;
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+    
+}

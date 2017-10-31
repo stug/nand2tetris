@@ -1,0 +1,71 @@
+function Queue.new 1
+push constant 2
+call Memory.alloc 1
+pop pointer 0
+push argument 0
+push constant 0
+call QueueElement.new 2
+pop local 0
+push local 0
+pop this 0
+push local 0
+pop this 1
+push pointer 0
+return
+function Queue.push 1
+push argument 0
+pop pointer 0
+push argument 1
+push constant 0
+call QueueElement.new 2
+pop local 0
+push this 1
+push local 0
+call QueueElement.setNext 2
+pop temp 0
+push local 0
+pop this 1
+push constant 0
+return
+function Queue.pop 2
+push argument 0
+pop pointer 0
+push this 0
+pop local 0
+push local 0
+call QueueElement.getNext 1
+pop this 0
+push local 0
+call QueueElement.getData 1
+pop local 1
+push local 0
+call QueueElement.dispose 1
+pop temp 0
+push local 1
+return
+function Queue.getTail 0
+push argument 0
+pop pointer 0
+push this 1
+call QueueElement.getData 1
+return
+function Queue.dispose 0
+push argument 0
+pop pointer 0
+label WHILE_EXP0
+push this 0
+push constant 0
+eq
+not
+not
+if-goto WHILE_END0
+push pointer 0
+call Queue.pop 1
+pop temp 0
+goto WHILE_EXP0
+label WHILE_END0
+push pointer 0
+call Memory.deAlloc 1
+pop temp 0
+push constant 0
+return
