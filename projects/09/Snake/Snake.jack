@@ -1,0 +1,101 @@
+class Snake {
+
+    field Queue elements;
+
+    // 0 = left, 1 = down, 2 = right, 3 = up
+    field int direction;
+
+    field int squareSize;
+
+    constructor Snake new() {
+        var Square newElement;
+        var int numSegments;
+
+        let direction = 0;
+        let squareSize = 20;
+        let newElement = Square.new(0, 0, squareSize);
+        do newElement.draw();
+        let elements = Queue.new(newElement);
+
+        let numSegments = 6;
+        while (numSegments > 0) {
+            let newElement = getNewHead();
+            do elements.push(newElement);
+            do newElement.draw();
+            let numSegments = numSegments - 1;
+        }
+
+        return this;
+    }
+
+    method void move() {
+        var Square newHead;
+        var Square oldTail;
+
+        let newHead = getNewHead();
+        do elements.push(newHead);
+        do newHead.draw();
+
+        let oldTail = elements.pop();
+        do oldTail.undraw();
+        do oldTail.dispose();
+
+        return;
+    }
+
+    method Array getNewHead() {
+        var Square head;
+        var Array headPosition;
+        var Square newSquare;
+        var Array newPosition;
+
+        /* the head of the snake is the tail of the queue (since we pop
+           from the head of the queue, and push to the tail of it) */
+        let head = elements.getTail();
+        let headPosition = head.getPosition();
+        let newPosition = Array.new(2);
+        
+        if (direction = 0) {
+            let newPosition[0] = headPosition[0] + squareSize;
+            let newPosition[1] = headPosition[1];
+        }
+        if (direction = 1) {
+            let newPosition[0] = headPosition[0];
+            let newPosition[1] = headPosition[1] + squareSize;
+        }
+        if (direction = 2) {
+            let newPosition[0] = headPosition[0] - squareSize;
+            let newPosition[1] = headPosition[1];
+        }
+        if (direction = 3) {
+            let newPosition[0] = headPosition[0];
+            let newPosition[1] = headPosition[1] - squareSize;
+        }
+
+        let newSquare = Square.new(newPosition[0], newPosition[1], squareSize);
+        return newSquare;
+    }
+
+    method void turnLeft() {
+        let direction = direction - 1;
+        if (direction < 0) {
+            let direction = direction + 4;
+        }
+        return;
+    }
+
+    method void turnRight() {
+        let direction = direction + 1;
+        if (direction > 3) {
+            let direction = direction - 4;
+        }
+        return;
+    }
+
+    method void dispose() {
+        do elements.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+}

@@ -1,0 +1,46 @@
+class Queue {
+    
+    field QueueElement head;
+    field QueueElement tail;
+
+    constructor Queue new(Square firstData) {
+        var QueueElement headAndTail;
+        let headAndTail = QueueElement.new(firstData, null);
+        let head = headAndTail;
+        let tail = headAndTail;
+
+        return this;
+    }
+
+    method void push(Square data) {
+        var QueueElement newElement;
+        let newElement = QueueElement.new(data, null);
+        do tail.setNext(newElement);
+        let tail = newElement;
+        return;
+    }
+
+    method Square pop() {
+        var QueueElement oldHead;
+        var Square poppedData;
+
+        let oldHead = head;
+        let head = oldHead.getNext();
+        let poppedData = oldHead.getData();
+        do oldHead.dispose();
+        return poppedData;
+    }
+
+    method Square getTail() {
+        return tail.getData();
+    }
+
+    method void dispose() {
+        while (~(head = null)) {
+            do pop();
+        }
+        do Memory.deAlloc(this);
+        return;
+    }
+
+}
