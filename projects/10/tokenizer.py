@@ -16,7 +16,7 @@ SYMBOLS_AND_WHITESPACE = SYMBOLS.union(set(string.whitespace))
 MAX_INTEGER = 2**15 - 1
 
 
-Token = namedtuple('Token', ['token_type', 'element'])
+Token = namedtuple('Token', ['type', 'value'])
 
 
 class TokenizerException(Exception): pass
@@ -101,13 +101,13 @@ class Tokenizer:
 
     def _parse_integer_constant(self, integer_constant):
         try:
-            integer_constant = int(integer_constant)
+            integer_constant_int = int(integer_constant)
         except ValueError:
             raise TokenizerException(
                 'Failed to extract integer from {}'.format(integer_constant),
             )
         
-        if integer_constant > MAX_INTEGER:
+        if integer_constant_int > MAX_INTEGER:
             raise TokenizerException(
                 'Integers must be between 0 and {} (got {})'.format(
                     MAX_INTEGER,

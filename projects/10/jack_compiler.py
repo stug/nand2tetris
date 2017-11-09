@@ -4,6 +4,7 @@ from enum import Enum
 
 from tokenizer import Tokenizer
 from token_xml import generate_and_save_token_xml
+from xml_compilation_engine import XmlCompilationEngine
 
 
 class OutputType(Enum):
@@ -15,9 +16,15 @@ class OutputType(Enum):
 def compile_files(file_or_directory, output_type):
     jack_file_paths = _get_jack_files_from_path(file_or_directory)
     for jack_file_path in jack_file_paths:
-        tokens = Tokenizer(jack_file_path).yield_tokens()
-        if output_type == OutputType.TOKEN_XML:
-            generate_and_save_token_xml(tokens, jack_file_path)
+        _compile_file(jack_file_path, output_type)
+
+
+def _compile_file(jack_file_path, output_type):
+    tokens = Tokenizer(jack_file_path).yield_tokens()
+    if output_type == OutputType.TOKEN_XML:
+        generate_and_save_token_xml(tokens, jack_file_path)
+    elif output_type == OutputType.XML:
+        XmlCompilationEngine(tokens, jack_file_path).generate_code()
 
 
 def _get_jack_files_from_path(path):
@@ -48,13 +55,20 @@ def build_argparser():
         help='jack file or directory containing jack files',
     )
 
-    output_type_group = argparser.add_mutually_exclusive_group()
+    output_type_group = argparser.add_mutually_exclusive_group(required=True)
     output_type_group.add_argument(
         '--token-xml',
         help='output token xml',
         action='store_const',
         dest='output_type',
         const=OutputType.TOKEN_XML,
+    )
+    output_type_group.add_argument(
+        '--xml',
+        help='output parse tree xml',
+        action='store_const',
+        dest='output_type',
+        const=OutputType.XML,
     )
     return argparser
 

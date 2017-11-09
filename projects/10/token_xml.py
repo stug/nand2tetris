@@ -1,19 +1,20 @@
 import os
-from xml.dom import minidom
 from xml.etree import ElementTree
+
+from xml_util import save_xml_to_file
 
 
 def generate_and_save_token_xml(tokens, jack_file_path):
     token_element_tree = _generate_token_element_tree(tokens)
     output_file_path = _get_output_file_path(jack_file_path)
-    _save_token_xml(token_element_tree, output_file_path)
+    save_xml_to_file(token_element_tree, output_file_path)
 
 
 def _generate_token_element_tree(tokens):
     root = ElementTree.Element('tokens')
     for token in tokens:
-        element = ElementTree.SubElement(root, token.token_type)
-        element.text = str(token.element)
+        element = ElementTree.SubElement(root, token.type)
+        element.text = token.value
     return root
 
 
@@ -36,19 +37,3 @@ def _get_output_dir(jack_file_dir):
     return output_dir_path
 
 
-def _save_token_xml(token_element_tree, output_file_path):
-    with open(output_file_path, 'w') as output_file:
-        output_file.write(
-            _format_xml(token_element_tree)
-        )
-
-
-def _format_xml(element_tree):
-    ugly_xml = ElementTree.tostring(element_tree)
-    pretty_xml = minidom.parseString(ugly_xml).toprettyxml()
-    split_pretty_xml = pretty_xml.split('\n')
-
-    # unfortunately the provided comparison tool doesn't like the xml version
-    # tag :-P
-    split_pretty_xml_without_metadata = split_pretty_xml[1:]
-    return '\n'.join(split_pretty_xml_without_metadata)
