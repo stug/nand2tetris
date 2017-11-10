@@ -1,6 +1,5 @@
 import argparse
 import os
-import sys
 
 from code_writer import CodeWriter
 from parser import Parser
