@@ -1,3 +1,8 @@
+"""This was my first attempt at a recursive descent parser for the Jack
+language.  After writing it, I had some ideas about how to make it more general,
+so see the parsing/ directory for the update, especially parsing.parse_node
+"""
+
 from functools import wraps
 from xml.etree import ElementTree
 

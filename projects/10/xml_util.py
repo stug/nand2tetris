@@ -1,9 +1,46 @@
 import re
+import os
 from xml.dom import minidom
 from xml.etree import ElementTree
 
+from parsing.parse_node import NonTerminalParseNode
+
 
 EMPTY_XML_TAG_LINE_RE = '^(?P<indentation>\s*)<(?P<tag>.*?)/>\s*$'
+
+
+
+def generate_and_save_token_xml(tokens, jack_file_path):
+    token_element_tree = _generate_token_element_tree(tokens)
+    output_file_path = _get_token_output_file_path(jack_file_path)
+    save_xml_to_file(token_element_tree, output_file_path)
+
+
+def _generate_token_element_tree(tokens):
+    root = ElementTree.Element('tokens')
+    for token in tokens:
+        element = ElementTree.SubElement(root, token.type)
+        element.text = token.value
+    return root
+
+
+def _get_token_output_file_path(jack_file_path):
+    jack_file_dir, jack_file_name = os.path.split(jack_file_path)
+    output_dir = _get_token_output_dir(jack_file_dir)
+
+    output_file_name = '{jack_file_name}T.xml'.format(
+        jack_file_name=jack_file_name[:-5],  # remove .jack
+    )
+    return os.path.join(output_dir, output_file_name)
+
+
+def _get_token_output_dir(jack_file_dir):
+    output_dir_path = '{}/generated_token_xml/'.format(jack_file_dir)
+
+    # TODO: not the best to do this more than once
+    if not os.path.exists(output_dir_path):
+        os.mkdir(output_dir_path)
+    return output_dir_path
 
 
 def save_xml_to_file(token_element_tree, output_file_path):
@@ -13,7 +50,6 @@ def save_xml_to_file(token_element_tree, output_file_path):
         )
 
 
-# TODO: need to change single empty tag to open and close pair
 def format_xml(element_tree):
     ugly_xml = ElementTree.tostring(element_tree)
     pretty_xml = minidom.parseString(ugly_xml).toprettyxml()
@@ -38,4 +74,30 @@ def _replace_empty_xml_tag_from_match(match):
     return '{indentation}<{tag}>\n{indentation}</{tag}>'.format(
         indentation=groupdict['indentation'],
         tag=groupdict['tag'],
+    )
+
+
+def save_parse_tree_to_xml_file(parse_tree_root, jack_file_path):
+    xml_element = convert_parse_tree_node_to_xml_element(parse_tree_root)
+    output_file_path = _get_output_file_path(jack_file_path)
+    save_xml_to_file(xml_element, output_file_path)
+
+
+def convert_parse_tree_node_to_xml_element(parse_tree_node):
+    xml_element = ElementTree.Element(parse_tree_node.grammar_element_name)
+
+    if isinstance(parse_tree_node, NonTerminalParseNode):
+        for child_node in parse_tree_node.child_nodes:
+            xml_element.append(
+                convert_parse_tree_node_to_xml_element(child_node)
+            )
+    else:
+        xml_element.text = parse_tree_node.token.value
+
+    return xml_element
+
+
+def _get_output_file_path(jack_file_path):
+    return '{}_parse_tree.xml'.format(
+        jack_file_path[:-5],  # remove .jack
     )
