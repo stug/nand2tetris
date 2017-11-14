@@ -2,9 +2,14 @@ import argparse
 import os
 from enum import Enum
 
+from parsing.jack_non_terminals import Class
+from parsing.parse_node import ParseException
+from parsing.token_proxy import TokenProxy
 from tokenizer import Tokenizer
-from token_xml import generate_and_save_token_xml
-from xml_compilation_engine import XmlCompilationEngine
+from xml_util import convert_parse_tree_node_to_xml_element
+from xml_util import format_xml
+from xml_util import generate_and_save_token_xml
+from xml_util import save_parse_tree_to_xml_file
 
 
 class OutputType(Enum):
@@ -24,7 +29,22 @@ def _compile_file(jack_file_path, output_type):
     if output_type == OutputType.TOKEN_XML:
         generate_and_save_token_xml(tokens, jack_file_path)
     elif output_type == OutputType.XML:
-        XmlCompilationEngine(tokens, jack_file_path).generate_code()
+        _compile_tokens_to_xml(tokens, jack_file_path)
+
+
+def _compile_tokens_to_xml(tokens, jack_file_path):
+    token_proxy = TokenProxy(list(tokens))
+    parse_tree_root = Class()
+
+    try:
+        parse_tree_root.attempt_parse(token_proxy)
+    except Exception as e:
+        print('Encountered issue in {}'.format(jack_file_path))
+        xml_element = convert_parse_tree_node_to_xml_element(parse_tree_root)
+        print(format_xml(xml_element))
+        raise
+
+    save_parse_tree_to_xml_file(parse_tree_root, jack_file_path)
 
 
 def _get_jack_files_from_path(path):
