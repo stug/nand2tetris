@@ -2,6 +2,7 @@ import argparse
 import os
 from enum import Enum
 
+from code_generation.code_generator import CodeGenerator
 from parsing.jack_non_terminals import Class
 from parsing.parse_node import ParseException
 from parsing.token_proxy import TokenProxy
@@ -28,11 +29,17 @@ def _compile_file(jack_file_path, output_type):
     tokens = Tokenizer(jack_file_path).yield_tokens()
     if output_type == OutputType.TOKEN_XML:
         generate_and_save_token_xml(tokens, jack_file_path)
-    elif output_type == OutputType.XML:
-        _compile_tokens_to_xml(tokens, jack_file_path)
+        return
+
+    parse_tree_root = _generate_parse_tree(tokens, jack_file_path)
+    if output_type == OutputType.XML:
+        save_parse_tree_to_xml_file(parse_tree_root, jack_file_path)
+        return
+
+    CodeGenerator(parse_tree_root, jack_file_path).generate_code()
 
 
-def _compile_tokens_to_xml(tokens, jack_file_path):
+def _generate_parse_tree(tokens, jack_file_path):
     token_proxy = TokenProxy(list(tokens))
     parse_tree_root = Class()
 
@@ -44,7 +51,7 @@ def _compile_tokens_to_xml(tokens, jack_file_path):
         print(format_xml(xml_element))
         raise
 
-    save_parse_tree_to_xml_file(parse_tree_root, jack_file_path)
+    return parse_tree_root
 
 
 def _get_jack_files_from_path(path):
@@ -75,7 +82,7 @@ def build_argparser():
         help='jack file or directory containing jack files',
     )
 
-    output_type_group = argparser.add_mutually_exclusive_group(required=True)
+    output_type_group = argparser.add_mutually_exclusive_group()
     output_type_group.add_argument(
         '--token-xml',
         help='output token xml',
@@ -90,6 +97,7 @@ def build_argparser():
         dest='output_type',
         const=OutputType.XML,
     )
+    argparser.set_defaults(output_type=OutputType.VM_CODE)
     return argparser
 
 

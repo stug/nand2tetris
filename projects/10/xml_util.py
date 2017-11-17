@@ -9,7 +9,6 @@ from parsing.parse_node import NonTerminalParseNode
 EMPTY_XML_TAG_LINE_RE = '^(?P<indentation>\s*)<(?P<tag>.*?)/>\s*$'
 
 
-
 def generate_and_save_token_xml(tokens, jack_file_path):
     token_element_tree = _generate_token_element_tree(tokens)
     output_file_path = _get_token_output_file_path(jack_file_path)
