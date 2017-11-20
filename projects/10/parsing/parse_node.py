@@ -32,7 +32,9 @@ handle (I think) any LL grammar?  Would need to be careful about optional nodes
 in the parse tree, though.
 * Separate the parse tree from the generated syntax tree -- some of the issues
 I encountered here are due to the differing state requirements of those two
-concerns.
+concerns.  ALSO this would make it so that the compilation logic doesn't need
+to know about the syntax (currently it needs to know, e.g., that a function's
+return type is the 2nd word in a function definition
 * Look into parser combinators, says Julian from RC :)
 """
 from parsing.token_proxy import TokensExhaustedException
@@ -48,29 +50,29 @@ class ParseNode:
     def attempt_parse(self, token_proxy):
         saved_token_position = token_proxy.current_token_position
 
-        print('\n{} attempting to parse {}, token #{}'.format(
-            self.node_type_name(),
-            token_proxy.get_current_token(),
-            token_proxy.current_token_position,
-        ))
+        # print('\n{} attempting to parse {}, token #{}'.format(
+        #     self.node_type_name(),
+        #     token_proxy.get_current_token(),
+        #     token_proxy.current_token_position,
+        # ))
 
         try:
             successful_node = self.parse(token_proxy)
-            print('  {} succeeded parsing {}, token #{}'.format(
-                self.node_type_name(),
-                token_proxy._tokens[saved_token_position],
-                saved_token_position,
-            ))
+            # print('  {} succeeded parsing {}, token #{}'.format(
+            #     self.node_type_name(),
+            #     token_proxy._tokens[saved_token_position],
+            #     saved_token_position,
+            # ))
             return successful_node
         except ParseException as e:
             # since we've failed to parse, reset the token stream to its
             # previous state
             token_proxy.set_token_position(saved_token_position)
-            print('  {} failed parsing {}, token position reset to {}'.format(
-                self.node_type_name(),
-                token_proxy._tokens[saved_token_position],
-                saved_token_position,
-            ))
+            # print('  {} failed parsing {}, token position reset to {}'.format(
+            #     self.node_type_name(),
+            #     token_proxy._tokens[saved_token_position],
+            #     saved_token_position,
+            # ))
             raise
 
     def parse(self, token_proxy):
@@ -115,16 +117,16 @@ class BaseAnyOf(ParseNode):
         # TODO: instead of this could go down the tree to find all possible 
         # beginning terminals to determine where to go next?
 
-        print('\n{} attempting to parse {}, token #{}'.format(
-            self.node_type_name(),
-            token_proxy.get_current_token(),
-            token_proxy.current_token_position,
-        ))
+        # print('\n{} attempting to parse {}, token #{}'.format(
+        #     self.node_type_name(),
+        #     token_proxy.get_current_token(),
+        #     token_proxy.current_token_position,
+        # ))
 
         for node_type in self.allowed_node_types:
             try:
                 successful_parse = node_type().attempt_parse(token_proxy)
-                print('  {} succeeded!'.format(self.node_type_name()))
+                # print('  {} succeeded!'.format(self.node_type_name()))
                 return successful_parse
             except ParseException as e:
                 pass
@@ -147,11 +149,11 @@ class BaseZeroOrMore(ParseNode):
     node_type_sequence = None
 
     def attempt_parse(self, token_proxy):
-        print('\n{} attempting to parse {}, token #{}'.format(
-            self.node_type_name(),
-            token_proxy.get_current_token(),
-            token_proxy.current_token_position,
-        ))
+        # print('\n{} attempting to parse {}, token #{}'.format(
+        #     self.node_type_name(),
+        #     token_proxy.get_current_token(),
+        #     token_proxy.current_token_position,
+        # ))
 
         nodes = []
         while True:
@@ -182,7 +184,8 @@ class BaseOptional(NonTerminalParseNode):
         saved_token_position = token_proxy.current_token_position
 
         try:
-            return self.parse(token_proxy)
+            self.parse(token_proxy)
+            return self.child_nodes  # don't want an Optional node in the tree
         except ParseException as e:
             # since we've failed to parse, reset the token stream to its
             # previous state
