@@ -8,31 +8,175 @@
  */
 class Math {
 
+    static int _2qy;  // used to improve runtime of division function
+    static Array _powersOfTwo;
+
     /** Initializes the library. */
     function void init() {
+        do Math._buildPowersOfTwo();
+        return;
+    }
+
+    function void _buildPowersOfTwo() {
+        var int i, powerOfTwo;
+
+        let i = 0;
+        let powerOfTwo = 1;
+        let _powersOfTwo = Array.new(8);
+
+        while (i < 8) {
+            let _powersOfTwo[i] = powerOfTwo;
+            let powerOfTwo = powerOfTwo + powerOfTwo;
+            let i = i + 1;
+        }
+        return;
     }
 
     /** Returns the absolute value of x. */
     function int abs(int x) {
+        return Math.max(x, -x);
+    }
+
+    /** Determine the sign of the result of multiplication and division.
+    Returns -1 if the result should be positive, else 1*/
+    function int _isResultNegative(int x, int y) {
+        var boolean xNegative, yNegative;
+        let xNegative = Math._isNegative(x);
+        let yNegative = Math._isNegative(y);
+        return (xNegative & ~yNegative) | (~xNegative & yNegative);
+    }
+
+    function boolean _isNegative(int x) {
+        if (x < 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /** Returns the product of x and y. */
     function int multiply(int x, int y) {
+        var int product, absX, absY;
+
+        let absX = Math.abs(x);
+        let absY = Math.abs(y);
+        let product = Math._multiplyInner(absX, absY);
+
+        if (Math._isResultNegative(x, y)) {
+            return -product;
+        } else {
+            return product;
+        }
+    }
+
+
+    function int _multiplyInner(int x, int y) {
+        var int sum, j, mask, shiftedX;
+
+        let sum = 0;
+        let j = 0;
+        let mask = 1;
+        let shiftedX = x;
+
+        while (j < 16) {
+            if (~(y & mask = 0)) {
+                let sum = sum + shiftedX;
+            }
+            let mask = mask + mask;
+            let shiftedX = shiftedX + shiftedX;
+            let j = j + 1;
+        }
+
+        return sum;
     }
 
     /** Returns the integer part of x/y. */
     function int divide(int x, int y) {
+        var int dividend, absX, absY;
+
+        let absX = Math.abs(x);
+        let absY = Math.abs(y);
+        let _2qy = 0;
+        
+        let dividend = Math._divideInner(absX, absY);
+        if (Math._isResultNegative(x, y)) {
+            return -dividend;
+        } else {
+            return dividend;
+        }
+    }
+
+    /* This uses the fact that as each recursive call returns, the y of the
+    caller (y1) is always half the y of the returning function (y0).  Using the
+    same convention, q1 = 2*q0 or q1 = 2*q0 + 1 depending which branch in the
+    if/else we took.  In the case that q1 = 2*q0, then
+        2*y1*q1 = 2*(1/2)*y0*2*q0 = 2*y0*q0.
+    Otherwise,
+        2*y1*q1 = 2*(1/2)*y0*(2*q0 + 1) = 2*y0*q0 + y0 = 2*y0*q0 + 2*y1
+    So in this case we can just add 2*y1 to the previous value of 2*y*q.
+    We can tell which fork we took by looking at the lowest bit q, since the
+    returning function will either return 2*q (which is even) or 2*q + 1.
+
+    Unfortunately this requires that we use a static class variable to keep
+    track of the value of 2*y*q (alternatively we could return a pointer to a
+    2-element array of q and 2*y*q).
+    */
+    function int _divideInner(int x, int y) {
+        var int q;
+        var int twoY;
+
+        let twoY = y + y;
+
+        if (y > x) {
+            return 0;
+        }
+
+        let q = Math._divideInner(x, twoY);
+        if (~(q & 1 = 0)) {
+            let _2qy = _2qy + twoY;
+        }
+
+        if (x - _2qy < y) {
+            return q + q;
+        } else {
+            return q + q + 1;
+        }
     }
 
     /** Returns the integer part of the square root of x. */
     function int sqrt(int x) {
+        var int j, y, maybeNewY, maybeNewYSquared;
+        let y = 0;
+        let j = 7;
+
+        while (~(j < 0)) {
+            let maybeNewY = y + _powersOfTwo[j];
+            let maybeNewYSquared = maybeNewY * maybeNewY;
+
+            if (maybeNewYSquared > 0 & ~(maybeNewYSquared > x)) {
+                let y = maybeNewY;
+            }
+            let j = j - 1;
+        }
+
+        return y;
     }
 
     /** Returns the greater number. */
     function int max(int a, int b) {
+        if (a > b) {
+            return a;
+        } else {
+            return b;
+        }
     }
 
     /** Returns the smaller number. */
     function int min(int a, int b) {
+        if (a < b) {
+            return a;
+        } else {
+            return b;
+        }
     }
 }
